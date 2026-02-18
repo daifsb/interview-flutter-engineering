@@ -66,29 +66,3 @@ test/
 - Phase 3 (60-90 min): advanced features + testing/bonus
 
 Detailed requirements are in `REQUIREMENTS.md`.
-
-## Evaluation Rubric
-
-| Area | Weight | What to Look For |
-| --- | ---: | --- |
-| Architecture | 25% | Clear separation of concerns, maintainable structure |
-| State Management | 20% | Correctness, scalability, rationale for choice |
-| API & Data | 20% | Robust loading/error handling, mapping, pagination |
-| UI/UX | 20% | Usability, polish, responsiveness, meaningful states |
-| Code Quality | 15% | Readability, naming, reuse, type safety, tests |
-
-## Senior Signals
-
-- Completes Phase 1 and most/all of Phase 2 with strong structure
-- Handles unhappy paths (network fail, empty state, retries)
-- Implements debounced search with proper state transitions
-- Designs state to scale into cart/favorites/pagination
-- Explains trade-offs clearly
-
-## Red Flags
-
-- No clear architecture
-- No meaningful error handling
-- Unstructured state or excessive ad-hoc `setState`
-- Pagination or core data flows are broken
-- Cannot justify design choices
