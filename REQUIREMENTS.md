@@ -78,5 +78,5 @@ Bonus (if time remains):
 
 - Unit test for data/repository layer.
 - Widget test for a product card/list state.
-- Offline caching strategy.r
+- Offline caching strategy.
 - UX improvement (animation, dark mode, etc.).

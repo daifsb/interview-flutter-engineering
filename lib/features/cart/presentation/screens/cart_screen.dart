@@ -53,6 +53,9 @@ class CartScreen extends ConsumerWidget {
                 return _CartItemTile(
                   item: item,
                   onTap: () => _showItemSheet(context, item),
+                  onDismissed: () => ref
+                      .read(cartProvider.notifier)
+                      .removeFromCart(item.product.id),
                 );
               },
             ),
@@ -156,18 +159,36 @@ class CartScreen extends ConsumerWidget {
 // ---------------------------------------------------------------------------
 
 class _CartItemTile extends StatelessWidget {
-  const _CartItemTile({required this.item, required this.onTap});
+  const _CartItemTile({
+    required this.item,
+    required this.onTap,
+    required this.onDismissed,
+  });
 
   final CartItem item;
   final VoidCallback onTap;
+  final VoidCallback onDismissed;
 
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
 
-    return GestureDetector(
-      onTap: onTap,
-      child: Card(
+    return Dismissible(
+      key: ValueKey<int>(item.product.id),
+      direction: DismissDirection.endToStart,
+      onDismissed: (_) => onDismissed(),
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        decoration: BoxDecoration(
+          color: Colors.red,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Icon(Icons.delete, color: Colors.white),
+      ),
+      child: GestureDetector(
+        onTap: onTap,
+        child: Card(
         child: Padding(
           padding: const EdgeInsets.all(12),
           child: Row(
@@ -220,6 +241,7 @@ class _CartItemTile extends StatelessWidget {
             ],
           ),
         ),
+      ),
       ),
     );
   }
