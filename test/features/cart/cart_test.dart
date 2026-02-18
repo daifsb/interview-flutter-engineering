@@ -59,6 +59,24 @@ void main() {
       expect(updated.quantity, 5);
       expect(updated.product, original.product);
     });
+
+    test('copyWith updates note while preserving quantity', () {
+      final CartItem original = CartItem(
+        product: _product(),
+        quantity: 2,
+        note: 'old note',
+      );
+      final CartItem updated = original.copyWith(note: 'new note');
+
+      expect(updated.note, 'new note');
+      expect(updated.quantity, 2);
+    });
+
+    test('note defaults to empty string', () {
+      final CartItem item = CartItem(product: _product(), quantity: 1);
+
+      expect(item.note, '');
+    });
   });
 
   // ---- Test #3: CartNotifier CRUD ----
@@ -124,6 +142,41 @@ void main() {
       notifier.addToCart(_product());
       notifier.addToCart(_product(id: 2, title: 'Other'));
       notifier.clearCart();
+
+      expect(container.read(cartProvider), isEmpty);
+    });
+
+    test('addToCart preserves existing note when accumulating quantity', () {
+      final CartNotifier notifier = container.read(cartProvider.notifier);
+      notifier.addToCart(_product());
+      notifier.updateCartItem(1, note: 'No chili');
+      notifier.addToCart(_product(), quantity: 2);
+
+      final CartItem item = container.read(cartProvider)[1]!;
+      expect(item.quantity, 3);
+      expect(item.note, 'No chili');
+    });
+
+    test('updateCartItem updates both quantity and note', () {
+      final CartNotifier notifier = container.read(cartProvider.notifier);
+      notifier.addToCart(_product());
+      notifier.updateCartItem(1, quantity: 5, note: 'Extra sauce');
+
+      final CartItem item = container.read(cartProvider)[1]!;
+      expect(item.quantity, 5);
+      expect(item.note, 'Extra sauce');
+    });
+
+    test('updateCartItem with quantity <= 0 removes item', () {
+      final CartNotifier notifier = container.read(cartProvider.notifier);
+      notifier.addToCart(_product());
+      notifier.updateCartItem(1, quantity: 0);
+
+      expect(container.read(cartProvider), isEmpty);
+    });
+
+    test('updateCartItem ignores unknown product id', () {
+      container.read(cartProvider.notifier).updateCartItem(99, quantity: 5);
 
       expect(container.read(cartProvider), isEmpty);
     });

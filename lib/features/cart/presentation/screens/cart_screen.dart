@@ -47,11 +47,13 @@ class CartScreen extends ConsumerWidget {
           : ListView.separated(
               padding: const EdgeInsets.all(16),
               itemCount: items.length,
-              separatorBuilder: (BuildContext context, int index) =>
-                  const SizedBox(height: 12),
+              separatorBuilder: (_, __) => const SizedBox(height: 12),
               itemBuilder: (BuildContext context, int index) {
                 final CartItem item = items[index];
-                return _CartItemTile(item: item);
+                return _CartItemTile(
+                  item: item,
+                  onTap: () => _showItemSheet(context, item),
+                );
               },
             ),
       bottomNavigationBar: items.isNotEmpty
@@ -114,6 +116,17 @@ class CartScreen extends ConsumerWidget {
     );
   }
 
+  void _showItemSheet(BuildContext context, CartItem item) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (_) => _CartItemBottomSheet(item: item),
+    );
+  }
+
   void _confirmClear(BuildContext context, WidgetRef ref) {
     showDialog<void>(
       context: context,
@@ -138,124 +151,274 @@ class CartScreen extends ConsumerWidget {
   }
 }
 
-class _CartItemTile extends ConsumerWidget {
-  const _CartItemTile({required this.item});
+// ---------------------------------------------------------------------------
+// Simplified tile — tapping opens the bottom sheet
+// ---------------------------------------------------------------------------
+
+class _CartItemTile extends StatelessWidget {
+  const _CartItemTile({required this.item, required this.onTap});
 
   final CartItem item;
+  final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: CachedNetworkImage(
-                imageUrl: item.product.thumbnail,
-                width: 72,
-                height: 72,
-                fit: BoxFit.cover,
+    return GestureDetector(
+      onTap: onTap,
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: CachedNetworkImage(
+                  imageUrl: item.product.thumbnail,
+                  width: 72,
+                  height: 72,
+                  fit: BoxFit.cover,
+                ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.product.title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item.product.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '\$${item.product.discountedPrice.toStringAsFixed(2)} each',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: Colors.grey,
+                    const SizedBox(height: 4),
+                    Text(
+                      '×${item.quantity}  ·  \$${item.totalPrice.toStringAsFixed(2)}',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.primary,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      _QuantityButton(
-                        icon: Icons.remove,
-                        onPressed: () => ref
-                            .read(cartProvider.notifier)
-                            .updateQuantity(
-                              item.product.id,
-                              item.quantity - 1,
-                            ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        child: Text(
-                          '${item.quantity}',
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      _QuantityButton(
-                        icon: Icons.add,
-                        onPressed: () => ref
-                            .read(cartProvider.notifier)
-                            .updateQuantity(
-                              item.product.id,
-                              item.quantity + 1,
-                            ),
-                      ),
-                      const Spacer(),
+                    if (item.note.isNotEmpty) ...[
+                      const SizedBox(height: 4),
                       Text(
-                        '\$${item.totalPrice.toStringAsFixed(2)}',
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: theme.colorScheme.primary,
+                        item.note,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: Colors.grey,
+                          fontStyle: FontStyle.italic,
                         ),
                       ),
                     ],
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(width: 4),
-            IconButton(
-              icon: const Icon(Icons.delete_outline, color: Colors.red),
-              onPressed: () => ref
-                  .read(cartProvider.notifier)
-                  .removeFromCart(item.product.id),
-            ),
-          ],
+              Icon(Icons.chevron_right, color: Colors.grey.shade400),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _QuantityButton extends StatelessWidget {
-  const _QuantityButton({required this.icon, required this.onPressed});
+// ---------------------------------------------------------------------------
+// Bottom sheet for editing quantity & note
+// ---------------------------------------------------------------------------
 
-  final IconData icon;
-  final VoidCallback onPressed;
+class _CartItemBottomSheet extends ConsumerStatefulWidget {
+  const _CartItemBottomSheet({required this.item});
+
+  final CartItem item;
+
+  @override
+  ConsumerState<_CartItemBottomSheet> createState() =>
+      _CartItemBottomSheetState();
+}
+
+class _CartItemBottomSheetState extends ConsumerState<_CartItemBottomSheet> {
+  late int _quantity;
+  late TextEditingController _noteController;
+
+  @override
+  void initState() {
+    super.initState();
+    _quantity = widget.item.quantity;
+    _noteController = TextEditingController(text: widget.item.note);
+  }
+
+  @override
+  void dispose() {
+    _noteController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onPressed,
-      borderRadius: BorderRadius.circular(4),
-      child: Container(
-        padding: const EdgeInsets.all(4),
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey.shade300),
-          borderRadius: BorderRadius.circular(4),
+    final ThemeData theme = Theme.of(context);
+    final product = widget.item.product;
+
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 24,
+        right: 24,
+        top: 16,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade300,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            product.title,
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 12),
+          const Divider(),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Price',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                '\$${product.discountedPrice.toStringAsFixed(2)}',
+                style: theme.textTheme.titleSmall,
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _noteController,
+            maxLines: 3,
+            decoration: InputDecoration(
+              hintText: 'Add a note...',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              contentPadding: const EdgeInsets.all(12),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              _SheetQuantityButton(
+                icon: Icons.remove,
+                backgroundColor: Colors.red.shade50,
+                iconColor: Colors.red,
+                onPressed:
+                    _quantity > 1 ? () => setState(() => _quantity--) : null,
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  '$_quantity',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              _SheetQuantityButton(
+                icon: Icons.add,
+                backgroundColor:
+                    theme.colorScheme.primary.withValues(alpha: 0.1),
+                iconColor: theme.colorScheme.primary,
+                onPressed: () => setState(() => _quantity++),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: FilledButton(
+                  onPressed: _onUpdate,
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text('Update'),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          TextButton(
+            onPressed: _onRemove,
+            child: const Text(
+              'Remove from cart',
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _onUpdate() {
+    ref.read(cartProvider.notifier).updateCartItem(
+          widget.item.product.id,
+          quantity: _quantity,
+          note: _noteController.text.trim(),
+        );
+    Navigator.pop(context);
+  }
+
+  void _onRemove() {
+    ref.read(cartProvider.notifier).removeFromCart(widget.item.product.id);
+    Navigator.pop(context);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Styled quantity button for the bottom sheet
+// ---------------------------------------------------------------------------
+
+class _SheetQuantityButton extends StatelessWidget {
+  const _SheetQuantityButton({
+    required this.icon,
+    required this.backgroundColor,
+    required this.iconColor,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final Color backgroundColor;
+  final Color iconColor;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: onPressed != null ? backgroundColor : Colors.grey.shade100,
+      borderRadius: BorderRadius.circular(8),
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.all(10),
+          child: Icon(
+            icon,
+            size: 20,
+            color: onPressed != null ? iconColor : Colors.grey.shade400,
+          ),
         ),
-        child: Icon(icon, size: 16),
       ),
     );
   }

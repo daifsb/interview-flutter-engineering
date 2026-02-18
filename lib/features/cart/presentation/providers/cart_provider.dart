@@ -14,6 +14,7 @@ class CartNotifier extends Notifier<Map<int, CartItem>> {
       product.id: CartItem(
         product: product,
         quantity: (current?.quantity ?? 0) + quantity,
+        note: current?.note ?? '',
       ),
     };
   }
@@ -30,6 +31,20 @@ class CartNotifier extends Notifier<Map<int, CartItem>> {
         productId: item.copyWith(quantity: quantity),
       };
     }
+  }
+
+  void updateCartItem(int productId, {int? quantity, String? note}) {
+    final CartItem? item = state[productId];
+    if (item == null) return;
+    final int newQty = quantity ?? item.quantity;
+    if (newQty <= 0) {
+      removeFromCart(productId);
+      return;
+    }
+    state = <int, CartItem>{
+      ...state,
+      productId: item.copyWith(quantity: newQty, note: note),
+    };
   }
 
   void removeFromCart(int productId) {
