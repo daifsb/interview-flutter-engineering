@@ -116,6 +116,12 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
     );
   }
 
+//   //* state.when(
+//   loading: () => const ShimmerProductGrid(),
+//   error: (error, stack) => _buildError(error.toString()),
+//   data: (state) => _buildBody(state),
+// )
+
   Widget _buildBody(ProductListState state) {
     if (state.isLoading && state.products.isEmpty) {
       return const ShimmerProductGrid();

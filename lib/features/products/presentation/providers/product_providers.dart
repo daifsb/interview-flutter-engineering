@@ -203,3 +203,9 @@ final NotifierProvider<ProductListNotifier, ProductListState>
     NotifierProvider<ProductListNotifier, ProductListState>(
   ProductListNotifier.new,
 );
+
+// @KeepAlive(true)
+// final KeepAliveProvider<ProductListNotifier> productListProvider =
+//     KeepAliveProvider<ProductListNotifier>(
+//   () => ProductListNotifier(),
+// );
