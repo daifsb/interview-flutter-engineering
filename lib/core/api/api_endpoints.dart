@@ -7,4 +7,6 @@ class ApiEndpoints {
 
   static String productsByCategory(String category) =>
       '/products/category/$category';
+
+  static String productDetail(int id) => '/products/$id';
 }

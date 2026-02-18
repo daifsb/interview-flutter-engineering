@@ -1,6 +1,7 @@
-import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/cart/presentation/screens/cart_screen.dart';
+import '../../features/favorites/presentation/screens/favorites_screen.dart';
 import '../../features/products/presentation/screens/product_detail_screen.dart';
 import '../../features/products/presentation/screens/product_list_screen.dart';
 
@@ -35,41 +36,15 @@ class AppRouter {
           GoRoute(
             path: 'cart',
             name: AppRoutes.cart,
-            builder: (context, state) => const _CartPlaceholderScreen(),
+            builder: (context, state) => const CartScreen(),
           ),
           GoRoute(
             path: 'favorites',
             name: AppRoutes.favorites,
-            builder: (context, state) => const _FavoritesPlaceholderScreen(),
+            builder: (context, state) => const FavoritesScreen(),
           ),
         ],
       ),
     ],
   );
-}
-
-class _CartPlaceholderScreen extends StatelessWidget {
-  const _CartPlaceholderScreen();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: Text('Cart screen placeholder (Phase 3).'),
-      ),
-    );
-  }
-}
-
-class _FavoritesPlaceholderScreen extends StatelessWidget {
-  const _FavoritesPlaceholderScreen();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: Text('Favorites screen placeholder (Phase 2).'),
-      ),
-    );
-  }
 }
